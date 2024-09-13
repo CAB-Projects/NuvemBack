@@ -198,7 +198,7 @@ async function selectAvaliacaoUsuario (dado){
 async function selectFiltro (dado){
     const params = [dado.nota]
     try{
-        const result = await conexao.query("SELECT * from receitas WHERE LOWER(titulo) LIKE '%" + dado.string + "%' and id_receitas NOT IN (SELECT id_receitas from avaliacao GROUP BY id_receitas having ROUND(AVG(nota)) < ?);", params);
+        const result = await conexao.query("SELECT * from clientes WHERE LOWER(nome) LIKE '%" + dado.string + "%' and usuario='restaurante' and id NOT IN (SELECT id_restaurante from avaliacao GROUP BY id_restaurante having ROUND(AVG(nota)) < ?);", params);
         console.log(result[0])
         return result[0];
     }
