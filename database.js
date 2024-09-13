@@ -4,7 +4,6 @@ const conexao = mysql.createPool(process.env.CONNECTION_STRING);
 
 async function selectUsuario (dado){
     const params = [dado.email, dado.senha, dado.usuario]
-    console.log(params)
     try{
         const result = await conexao.query("SELECT * from clientes WHERE email=? and senha=? and usuario=?;", params);
         return result[0][0];
@@ -17,7 +16,6 @@ async function selectUsuario (dado){
 
 async function insertUsuario (dado){
     const params = [dado.email, dado.usuario, dado.senha, dado.nome];
-    console.log(params);
     try{
         const result = await conexao.query("SELECT * from clientes WHERE email=?;", dado.email); 
         if(result[0][0] == null){
@@ -121,7 +119,6 @@ async function selectAllReceitaUsuario (id_usuario){
 async function deleteReceita (dado){
     const params = [dado.id_receitas]
     try{
-        await conexao.query("DELETE from avaliacao WHERE id_receitas=?;", params); // mudar para receitas né
         await conexao.query("DELETE from curtidas WHERE id_receitas=?;", params);
         await conexao.query("DELETE from comentarios WHERE id_receitas=?;", params);
         const result = await conexao.query("DELETE from receitas WHERE id_receitas=?;", params);
@@ -143,17 +140,17 @@ async function selectAllReceita (){
         return;
     }
 }
-
+//ta certo
 async function insertAvaliacao (dado){
-    const params = [dado.nota, dado.id_usuario, dado.id_receitas]
+    const params = [dado.nota, dado.id_usuario, dado.id_restaurante]
     try{
-        const result = await conexao.query("SELECT * from avaliacao WHERE id_usuario=? and id_receitas=?;", [dado.id_usuario, dado.id_receitas]); 
+        const result = await conexao.query("SELECT * from avaliacao WHERE id_usuario=? and id_restaurante=?;", [dado.id_usuario, dado.id_restaurante]); 
         if(result[0][0] == null){  
-            const result2 = await conexao.query("INSERT INTO avaliacao (nota, id_usuario, id_receitas) VALUES (?, ?, ?);", params);         
+            const result2 = await conexao.query("INSERT INTO avaliacao (nota, id_usuario, id_restaurante) VALUES (?, ?, ?);", params);         
             return result2[0];
         }
         else{       
-            const result2 = await conexao.query("UPDATE avaliacao SET nota=? WHERE id_usuario=? and id_receitas=?;", params);    
+            const result2 = await conexao.query("UPDATE avaliacao SET nota=? WHERE id_usuario=? and id_restaurante=?;", params);    
             return result2[0];
         }
     }
@@ -162,11 +159,11 @@ async function insertAvaliacao (dado){
         return;
     }
 }
-
+//ta certo
 async function selectAvaliacao (dado){
-    const params = [dado.id_receitas]
+    const params = [dado.id_restaurante]
     try{
-        const result = await conexao.query("SELECT AVG(nota) from avaliacao GROUP BY id_receitas having id_receitas = ?;", params);
+        const result = await conexao.query("SELECT ROUND(AVG(nota)) AS average_nota from avaliacao GROUP BY id_restaurante having id_restaurante = ?;", params);
         return result[0][0];
     }
     catch(e){
@@ -174,10 +171,10 @@ async function selectAvaliacao (dado){
         return;
     }
 }
-
+//ta certo
 async function selectAllAvaliacao (){
     try{
-        const result = await conexao.query("SELECT AVG(nota), id_receitas from avaliacao GROUP BY id_receitas;");
+        const result = await conexao.query("SELECT ROUND(AVG(nota)) AS average_nota, id_restaurante from avaliacao GROUP BY id_restaurante;");
         return result[0];
     }
     catch(e){
@@ -185,11 +182,11 @@ async function selectAllAvaliacao (){
         return;
     }
 }
-
+//ta certo
 async function selectAvaliacaoUsuario (dado){
-    const params = [dado.id_receitas, dado.id_usuario]
+    const params = [dado.id_restaurante, dado.id_usuario]
     try{
-        const result = await conexao.query("SELECT nota from avaliacao WHERE id_receitas=? and id_usuario=?;", params);
+        const result = await conexao.query("SELECT nota from avaliacao WHERE id_restaurante=? and id_usuario=?;", params);
         return result[0][0];
     }
     catch(e){
@@ -201,7 +198,7 @@ async function selectAvaliacaoUsuario (dado){
 async function selectFiltro (dado){
     const params = [dado.nota]
     try{
-        const result = await conexao.query("SELECT * from receitas WHERE LOWER(titulo) LIKE '%" + dado.string + "%' and id_receitas NOT IN (SELECT id_receitas from avaliacao GROUP BY id_receitas having AVG(nota) < ?);", params);
+        const result = await conexao.query("SELECT * from receitas WHERE LOWER(titulo) LIKE '%" + dado.string + "%' and id_receitas NOT IN (SELECT id_receitas from avaliacao GROUP BY id_receitas having ROUND(AVG(nota)) < ?);", params);
         console.log(result[0])
         return result[0];
     }
@@ -308,6 +305,18 @@ async function selectAllComentario (id_receitas){
 ]
 */
 
+async function selectAllRestaurantes (){
+    try{
+        console.log("Oi")
+        const result = await conexao.query("SELECT nome from clientes WHERE usuario='restaurante';");
+        return result[0];
+    }
+    catch(e){
+        console.log(e)
+        return;
+    }
+}
+
 module.exports = {
     selectUsuario,
     insertUsuario,
@@ -330,5 +339,6 @@ module.exports = {
     selectAllCurtida,
     countCurtida,
     insertComentario,
-    selectAllComentario
+    selectAllComentario,
+    selectAllRestaurantes
 }

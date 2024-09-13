@@ -10,7 +10,6 @@ const bd = require("./database")
 app.use(express.json());
 
 app.post("/login", async (req, res) => {
-    console.log("oi");
     const dado = req.body;
     const corpo = await bd.selectUsuario(dado);
     if (corpo != null){
@@ -293,6 +292,19 @@ app.post("/comentario/cadastro", async (req, res) => {
 app.get("/comentario/read/:id_receitas", async (req, res) => {
     const id_receitas = req.params.id_receitas;
     const corpo = await bd.selectAllComentario(id_receitas);
+    if (corpo != null){
+        res.set('Content-Type', 'application/json');
+        res.send(corpo).status(200);  
+    }
+    else{
+        res.set('Content-Type', 'application/json');
+        res.status(204).send();        
+    }    
+})
+
+//retorna todos os restaurantes
+app.get("/restaurantes/all/read", async (req, res) => {
+    const corpo = await bd.selectAllRestaurantes();
     if (corpo != null){
         res.set('Content-Type', 'application/json');
         res.send(corpo).status(200);  
