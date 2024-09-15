@@ -17,3 +17,11 @@ For Linux/Mac : sudo -s on terminal
 npm cache clean -f (force) clear you npm cache
 npm install -g n install "n" (this might take a while)
 n stable upgrade to lastest version
+
+https://www.youtube.com/watch?v=DjUD7_mJJPE
+
+NO POSTMAN: http://192.168.229.128:8000/avaliacao/read
+
+create user 'cab'@'%' identified by 'vm-pass';
+
+grant all on *.* to 'cab'@'%';
