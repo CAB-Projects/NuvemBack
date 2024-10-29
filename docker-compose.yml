@@ -1,34 +1,45 @@
-version: '3'
-services:
-  app:
-    image: node:21
-    volumes:
-      - ./NuvemBack:/usr/src/app
-    working_dir: /usr/src/app
-    command: bash -c "npm install && npm start"
-    ports:
-      - "8000:8000"
-    environment:
-      - DB_HOST=db  # Use 'db' as the MySQL service name
-      - DB_USER=cab  # Username defined for MySQL
-      - DB_PASS=vm-pass  # Password defined for MySQL
-      - DB_NAME=site_restaurantes  # The database name to connect to
-      - DB_PORT=3306  # MySQL port
-    depends_on:
-      - db  # Ensure the db service starts before the app
+name: Docker Compose Deploy
 
-  db:
-    image: mysql:8.0 # Using the latest MySQL image
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: password  # Root password for MySQL
-      MYSQL_DATABASE: site_restaurantes  # The database name to create
-      MYSQL_USER: cab  # Username for MySQL
-      MYSQL_PASSWORD: vm-pass  # Password for the new user
-    ports:
-      - "3307:3306"  # Expose MySQL port
-    volumes:
-      - db_data:/var/lib/mysql  # Persist data using a volume
-      - ./pasta:/docker-entrypoint-initdb.d
-volumes:
-  db_data:
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'NuvemBack/**'
+      - 'pasta/**'
+      - 'docker-compose.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Create .env file
+        run: |
+          echo "DB_HOST=db" >> .env
+          echo "DB_USER=cab" >> .env
+          echo "DB_PASS=vm-pass" >> .env
+          echo "DB_NAME=site_restaurantes" >> .env
+          echo "DB_PORT=3306" >> .env
+          echo "MYSQL_ROOT_PASSWORD=password" >> .env
+          echo "MYSQL_DATABASE=site_restaurantes" >> .env
+          echo "MYSQL_USER=cab" >> .env
+          echo "MYSQL_PASSWORD=vm-pass" >> .env
+
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
+
+      - name: Start containers
+        run: |
+          docker-compose pull
+          docker-compose up -d --build
+
+      - name: Check running containers
+        run: docker-compose ps
+
+      - name: Check container logs
+        run: |
+          docker-compose logs app
+          docker-compose logs db
