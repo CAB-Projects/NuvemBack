@@ -50,5 +50,5 @@ jobs:
 
       - name: Deploy with Docker Compose
         run: |
-          docker-compose pull
+          docker-compose push
           docker-compose up -d
