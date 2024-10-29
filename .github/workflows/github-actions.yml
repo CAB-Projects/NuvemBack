@@ -1,4 +1,4 @@
-name: Docker Compose
+name: Docker Hub Push
 
 on:
   push:
@@ -15,7 +15,6 @@ jobs:
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       mysql: ${{ steps.filter.outputs.mysql }}
-      docker_compose: ${{ steps.filter.outputs.docker_compose }}
     steps:
       - uses: actions/checkout@v2
       - uses: dorny/paths-filter@v2
@@ -26,8 +25,6 @@ jobs:
               - 'NuvemBack/**'
             mysql:
               - 'pasta/**'
-            docker_compose:
-              - 'docker-compose.yml'
 
   build-and-push:
     needs: changes
@@ -37,18 +34,51 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Login to Docker Hub
-        if: ${{ needs.changes.outputs.backend == 'true' || needs.changes.outputs.mysql == 'true' }}
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: Set up Docker Compose
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y docker-compose
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-      - name: Deploy with Docker Compose
+      # Criar Dockerfile temporário para o backend
+      - name: Create Backend Dockerfile
+        if: needs.changes.outputs.backend == 'true'
         run: |
-          docker-compose push
-          docker-compose up -d
+          cat > ./NuvemBack/Dockerfile << 'EOF'
+          FROM node:21
+          WORKDIR /usr/src/app
+          COPY package*.json ./
+          RUN npm install
+          COPY . .
+          EXPOSE 8000
+          CMD ["npm", "start"]
+          EOF
+
+      # Criar Dockerfile temporário para o MySQL
+      - name: Create MySQL Dockerfile
+        if: needs.changes.outputs.mysql == 'true'
+        run: |
+          cat > ./pasta/Dockerfile << 'EOF'
+          FROM mysql:8.0
+          COPY ./*.sql /docker-entrypoint-initdb.d/
+          EOF
+
+      # Build e Push da imagem do backend
+      - name: Build and push backend image
+        if: needs.changes.outputs.backend == 'true'
+        uses: docker/build-push-action@v2
+        with:
+          context: ./NuvemBack
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/nuvemback:latest
+
+      # Build e Push da imagem do MySQL
+      - name: Build and push mysql image
+        if: needs.changes.outputs.mysql == 'true'
+        uses: docker/build-push-action@v2
+        with:
+          context: ./pasta
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/mysql-restaurantes:latest
