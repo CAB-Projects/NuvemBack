@@ -1,0 +1,66 @@
+name: Docker Compose
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'NuvemBack/**'
+      - 'pasta/**'
+      - 'docker-compose.yml'
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      mysql: ${{ steps.filter.outputs.mysql }}
+      docker_compose: ${{ steps.filter.outputs.docker_compose }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'NuvemBack/**'
+            mysql:
+              - 'pasta/**'
+            docker_compose:
+              - 'docker-compose.yml'
+
+  build-and-push:
+    needs: changes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Login to Docker Hub
+        if: ${{ needs.changes.outputs.backend == 'true' || needs.changes.outputs.mysql == 'true' }}
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        if: ${{ needs.changes.outputs.backend == 'true' || needs.changes.outputs.mysql == 'true' }}
+        uses: docker/setup-buildx-action@v2
+
+      # Build e Push Backend
+      - name: Build and push backend image
+        if: needs.changes.outputs.backend == 'true'
+        uses: docker/build-push-action@v2
+        with:
+          context: ./NuvemBack
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/nuvemback:latest
+
+      # Build e Push MySQL
+      - name: Build and push mysql image
+        if: needs.changes.outputs.mysql == 'true'
+        uses: docker/build-push-action@v2
+        with:
+          context: ./pasta
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/mysql:latest
