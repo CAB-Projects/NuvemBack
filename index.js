@@ -10,6 +10,7 @@ const bd = require("./database")
 app.use(express.json());
 
 app.post("/login", async (req, res) => {
+    console.log("chegou lgoin");
     const dado = req.body;
     const corpo = await bd.selectUsuario(dado);
     if (corpo != null){
@@ -316,8 +317,15 @@ app.get("/restaurantes/all/read", async (req, res) => {
 })
 
 app.use(cors({
-    origin: ['http://localhost:8000']
+    origin: "*"
 }))
+
+app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header('Access-Control-Allow-Methods', 'DELETE, PUT, GET, POST, OPTIONS');
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+});
 
 app.listen(process.env.PORT, () => {
     console.log("O bagulho ta legal");
