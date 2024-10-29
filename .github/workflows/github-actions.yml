@@ -1,4 +1,4 @@
-name: Docker Compose
+name: Docker Compose Deploy
 
 on:
   push:
@@ -10,57 +10,36 @@ on:
       - 'docker-compose.yml'
 
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      backend: ${{ steps.filter.outputs.backend }}
-      mysql: ${{ steps.filter.outputs.mysql }}
-      docker_compose: ${{ steps.filter.outputs.docker_compose }}
-    steps:
-      - uses: actions/checkout@v2
-      - uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          filters: |
-            backend:
-              - 'NuvemBack/**'
-            mysql:
-              - 'pasta/**'
-            docker_compose:
-              - 'docker-compose.yml'
-
-  build-and-push:
-    needs: changes
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Login to Docker Hub
-        if: ${{ needs.changes.outputs.backend == 'true' || needs.changes.outputs.mysql == 'true' }}
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+      - name: Create .env file
+        run: |
+          echo "DB_HOST=db" >> .env
+          echo "DB_USER=cab" >> .env
+          echo "DB_PASS=vm-pass" >> .env
+          echo "DB_NAME=site_restaurantes" >> .env
+          echo "DB_PORT=3306" >> .env
+          echo "MYSQL_ROOT_PASSWORD=password" >> .env
+          echo "MYSQL_DATABASE=site_restaurantes" >> .env
+          echo "MYSQL_USER=cab" >> .env
+          echo "MYSQL_PASSWORD=vm-pass" >> .env
 
-      - name: Set up Docker Buildx
-        if: ${{ needs.changes.outputs.backend == 'true' || needs.changes.outputs.mysql == 'true' }}
+      - name: Set up Docker
         uses: docker/setup-buildx-action@v2
 
-      # Build e Push Backend
-      - name: Build and push backend image
-        if: needs.changes.outputs.backend == 'true'
-        uses: docker/build-push-action@v2
-        with:
-          context: ./NuvemBack
-          push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/nuvemback:latest
+      - name: Start containers
+        run: |
+          docker-compose pull
+          docker-compose up -d --build
 
-      # Build e Push MySQL
-      - name: Build and push mysql image
-        if: needs.changes.outputs.mysql == 'true'
-        uses: docker/build-push-action@v2
-        with:
-          context: ./pasta
-          push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/mysql:latest
+      - name: Check running containers
+        run: docker-compose ps
+
+      - name: Check container logs
+        run: |
+          docker-compose logs app
+          docker-compose logs db
