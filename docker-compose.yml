@@ -4,7 +4,7 @@ services:
     image: node:21
     volumes:
       - ./NuvemBack:/usr/src/app
-    working_dir: /usr/src/app/NuvemBack
+    working_dir: /usr/src/app
     command: bash -c "npm install && npm start"
     ports:
       - "8000:8000"
