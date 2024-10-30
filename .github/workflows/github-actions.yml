@@ -49,8 +49,9 @@ jobs:
           cat > ./NuvemBack/Dockerfile << 'EOF'
           FROM node:21
           WORKDIR /usr/src/app
-          COPY NuvemBack/. .
+          COPY package*.json ./
           RUN npm install
+          COPY . .
           EXPOSE 8000
           CMD ["npm", "start"]
           EOF
