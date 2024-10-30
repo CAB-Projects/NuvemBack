@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'NuvemBack/**'
+      - 'NuvemBack/NuvemBack/**'
       - 'pasta/**'
       - 'docker-compose.yml'
 
@@ -22,7 +22,7 @@ jobs:
         with:
           filters: |
             backend:
-              - 'NuvemBack/**'
+              - 'NuvemBack/NuvemBack/**'
             mysql:
               - 'pasta/**'
 
